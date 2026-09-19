@@ -1,0 +1,3 @@
+import {PrismaClient} from "@prisma/client";
+const db=new PrismaClient();
+async function main(){const products=[["NS-PROD-000001","Strobo Animation Pack V3","Animation",45000],["NS-PROD-000002","BUS Creative Livery Pack","Livery",75000],["NS-PROD-000003","3D Vehicle Base","3D",250000],["NS-PROD-000004","Graphic Asset Starter","Other",35000]] as const;for(const p of products){await db.product.upsert({where:{productId:p[0]},update:{},create:{productId:p[0],name:p[1],slug:p[0].toLowerCase(),description:"Digital product "+p[1],category:p[2],price:p[3],status:"PUBLISHED",author:"NARARYA STUDIO",license:"Personal / Project License"}})}} main().finally(()=>db.$disconnect());
