@@ -1,0 +1,8 @@
+export type Product={id:string,name:string,category:string,price:number,oldPrice?:number,description:string,version:string,format:string,license:string};
+export const products:Product[]=[
+{id:"NS-PROD-000001",name:"Strobo Animation Pack V3",category:"Animation",price:45000,oldPrice:55000,description:"Pack animasi strobo digital untuk kebutuhan kendaraan dan konten.",version:"3.0",format:"MP4 / PNG",license:"Personal Use"},
+{id:"NS-PROD-000002",name:"BUS Creative Livery Pack",category:"Livery",price:75000,description:"Koleksi asset livery digital dengan file siap edit.",version:"2.1",format:"PNG / PSD",license:"Personal Use"},
+{id:"NS-PROD-000003",name:"3D Vehicle Base",category:"3D",price:250000,description:"Base model kendaraan untuk visualisasi dan game asset.",version:"1.0",format:"BLEND / FBX / OBJ",license:"Commercial Use"},
+{id:"NS-PROD-000004",name:"Graphic Asset Starter",category:"Graphic",price:35000,description:"Asset grafis modular untuk poster, banner dan media sosial.",version:"1.4",format:"PNG / SVG",license:"Commercial Use"}];
+export const services=[{name:"2D Design",items:["Logo","Poster","Banner","Livery","Branding","Social Media"]},{name:"3D Design",items:["3D Modeling","3D Vehicle","3D Bus","3D Truck","Game Asset","Visualization"]},{name:"Animation",items:["Strobo Animation","Logo Animation","Motion Graphic","Vehicle Animation"]}];
+export const formatIDR=(n:number)=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n);
