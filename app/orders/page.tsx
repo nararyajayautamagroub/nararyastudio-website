@@ -1,0 +1,1 @@
+export default function Orders(){return <main className="page"><div className="eyebrow">CUSTOMER</div><h1>Orders</h1><section className="card"><p>Order memakai format <b>NS-ORD-000001</b> dan menyimpan payment, invoice, license, serta delivery.</p><a className="button" href="/store">Browse Store</a></section></main>}
