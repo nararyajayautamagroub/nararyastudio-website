@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){const{id}=await params;const p=await db.product.findFirst({where:{OR:[{id},{productId:id},{slug:id}],status:"PUBLISHED"}});if(!p)return NextResponse.json({error:"Produk tidak ditemukan"},{status:404});return NextResponse.json({product:{...p,price:p.price,discount:p.discount,gallery:p.gallery}});}
