@@ -1,0 +1,48 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum ProductStatus { DRAFT PUBLISHED UNPUBLISHED ARCHIVED SOLD_OUT }
+enum RequestStatus { SUBMITTED REVIEWING QUOTATION WAITING_PAYMENT PAID IN_PROGRESS REVISION FINAL_REVIEW COMPLETED CANCELLED REJECTED ON_HOLD EXPIRED }
+enum PaymentStatus { PENDING PAID FAILED EXPIRED REFUNDED }
+enum OrderStatus { PENDING PAID PROCESSING COMPLETED CANCELLED REFUNDED }
+enum PricingType { FIXED STARTING_FROM CUSTOM_QUOTE CONTACT }
+enum StaffRole { SUPER_ADMIN ADMIN FINANCE DESIGNER ARTIST_3D SUPPORT PRODUCT_MANAGER CONTENT_MANAGER }
+
+model User {
+ id String @id @default(cuid()); name String; username String @unique; email String @unique
+ passwordHash String; role StaffRole?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+ orders Order[]; requests ServiceRequest[]; reviews Review[]; wishlist WishlistItem[]; downloads DownloadLog[]; tickets Ticket[]
+}
+model Product {
+ id String @id @default(cuid()); productId String @unique; name String; slug String @unique; description String
+ category String; price Int; discount Int @default(0); thumbnail String?; gallery Json?
+ filePath String?; version String @default("1.0.0"); changelog String?; license String?
+ compatibility String?; requirements String?; author String?; status ProductStatus @default(DRAFT)
+ createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; orderItems OrderItem[]; wishlist WishlistItem[]; reviews Review[]; downloads DownloadLog[]
+}
+model ServiceRequest {
+ id String @id @default(cuid()); requestId String @unique; customerId String; serviceType String; requestedProduct String?
+ description String; size String?; format String?; deadline DateTime?; budget Int?; references Json?; notes String?
+ status RequestStatus @default(SUBMITTED); quotedPrice Int?; revisionLimit Int @default(2); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+ customer User @relation(fields:[customerId],references:[id]); quotations Quotation[]; revisions Revision[]
+}
+model Quotation {
+ id String @id @default(cuid()); requestId String; scope String; price Int; discount Int @default(0); extras Int @default(0)
+ total Int; deadline DateTime?; revisionCount Int @default(2); terms String; validUntil DateTime; approvedAt DateTime?
+ request ServiceRequest @relation(fields:[requestId],references:[id])
+}
+model Order {
+ id String @id @default(cuid()); orderId String @unique; customerId String; subtotal Int; discount Int @default(0); total Int
+ paymentStatus PaymentStatus @default(PENDING); status OrderStatus @default(PENDING); invoicePath String?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
+ customer User @relation(fields:[customerId],references:[id]); items OrderItem[]; downloads DownloadLog[]
+}
+model OrderItem { id String @id @default(cuid()); orderId String; productId String; quantity Int @default(1); price Int; discount Int @default(0)
+ order Order @relation(fields:[orderId],references:[id]); product Product @relation(fields:[productId],references:[id])
+}
+model DownloadLog { id String @id @default(cuid()); userId String; productId String; orderId String?; tokenHash String; expiresAt DateTime; count Int @default(0); maxDownloads Int?
+ user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); order Order? @relation(fields:[orderId],references:[id]) }
+model WishlistItem { id String @id @default(cuid()); userId String; productId String; createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); @@unique([userId,productId]) }
+model Review { id String @id @default(cuid()); userId String; productId String; rating Int; title String?; body String; approved Boolean @default(false); createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]) }
+model Revision { id String @id @default(cuid()); requestId String; number Int; notes String; attachmentPath String?; createdAt DateTime @default(now()); request ServiceRequest @relation(fields:[requestId],references:[id]) }
+model Ticket { id String @id @default(cuid()); ticketId String @unique; userId String; subject String; category String; message String; status String @default("OPEN"); createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]) }
+model AuditLog { id String @id @default(cuid()); actorId String?; action String; entity String; entityId String?; metadata Json?; ipHash String?; createdAt DateTime @default(now()) }
