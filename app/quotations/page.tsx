@@ -1,0 +1,1 @@
+export default function Quotations(){return <main className="page"><div className="eyebrow">CUSTOM REQUEST</div><h1>Quotations</h1><section className="card"><p>Quotation berisi scope, harga, diskon, extras, deadline, jumlah revisi, terms, dan masa berlaku.</p></section></main>}
