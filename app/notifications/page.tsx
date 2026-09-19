@@ -1,0 +1,1 @@
+export default function Notifications(){return <main className="page"><div className="eyebrow">CUSTOMER</div><h1>Notifications</h1><section className="card"><p>Notifikasi order, request, payment, revision, dan update produk akan dikirim melalui kanal yang dikonfigurasi.</p></section></main>}
