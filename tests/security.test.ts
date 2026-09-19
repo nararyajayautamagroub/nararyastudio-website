@@ -1,0 +1,2 @@
+import {describe,expect,it} from "vitest"; import {hashToken,isValidEmail,safeText} from "../lib/security";
+describe("security helpers",()=>{it("hashes deterministically",()=>expect(hashToken("abc")).toBe(hashToken("abc")));it("validates email",()=>{expect(isValidEmail("user@example.com")).toBe(true);expect(isValidEmail("bad")).toBe(false)});it("limits text",()=>expect(safeText(" abc ",3)).toBe("abc"))});
