@@ -1,0 +1,1 @@
+export default function Wishlist(){return <main className="page"><div className="eyebrow">CUSTOMER</div><h1>Wishlist</h1><section className="card"><p>Simpan produk favorit. Data production disimpan di database.</p></section></main>}
