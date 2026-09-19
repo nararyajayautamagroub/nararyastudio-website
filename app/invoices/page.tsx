@@ -1,0 +1,1 @@
+export default function Invoices(){return <main className="page"><div className="eyebrow">DOCUMENTS</div><h1>Invoices</h1><section className="card"><p>Invoice PDF dibuat server-side setelah order terverifikasi.</p></section></main>}
