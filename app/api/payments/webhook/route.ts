@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";
+export async function POST(req:Request){const secret=req.headers.get("x-webhook-secret");if(!process.env.PAYMENT_WEBHOOK_SECRET||secret!==process.env.PAYMENT_WEBHOOK_SECRET)return NextResponse.json({error:"Unauthorized"},{status:401});const body=await req.json();return NextResponse.json({received:true,eventId:body.eventId??null,idempotency:"Payment event must be stored idempotently before changing order state."})}
