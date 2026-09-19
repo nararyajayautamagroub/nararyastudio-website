@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server"; import {orderId} from "@/lib/security";
+export async function POST(req:Request){try{const body=await req.json();if(!body.customerId||!Array.isArray(body.items)||!body.items.length)return NextResponse.json({error:"Customer dan item wajib diisi."},{status:400});return NextResponse.json({orderId:orderId(),status:"PENDING",paymentStatus:"PENDING",next:"Connect payment gateway webhook."},{status:201})}catch{return NextResponse.json({error:"Checkout gagal."},{status:500})}}
