@@ -186,7 +186,11 @@ model Order {
   orderId       String        @unique
   customerId    String
   couponId      String?
-  paymentMethod String        @default("QRIS")
+  paymentMethod       String        @default("QRIS")
+  gatewayProvider     String?
+  gatewayToken        String?
+  gatewayRedirectUrl  String?
+  gatewayTransactionId String?
   subtotal      Int
   discount      Int           @default(0)
   total         Int
