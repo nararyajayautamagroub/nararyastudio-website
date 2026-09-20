@@ -14,9 +14,17 @@ POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/logout
 GET /api/auth/me
+GET /api/auth/google
+GET /api/auth/google/callback
+POST /api/auth/password
+POST /api/auth/sessions/revoke-all
+
+Google OAuth uses an authorization-code flow with a short-lived HttpOnly state cookie. The callback requires a verified Google email before creating/linking the local account.
 
 ## Customer
 
+GET /api/settings
+PATCH /api/settings
 GET /api/orders
 POST /api/orders/:id/downloads
 GET /api/downloads/:token
