@@ -1,6 +1,6 @@
 {
   "name": "nararya-studio",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "scrape": "node scripts/scraper.mjs",
-    "verify": "npm run db:validate && npm run db:generate && npm run typecheck && npm run test && npm run build"
+    "verify": "npm run db:validate && npm run db:generate && npm run check:js && npm run typecheck && npm run test && npm run build",
+    "check:js": "node --check scripts/scraper.mjs && node --check public/js/nararya-bootstrap.js && node --check public/js/nararya-gateway.js"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
