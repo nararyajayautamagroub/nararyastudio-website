@@ -185,6 +185,7 @@ model Order {
   orderId       String        @unique
   customerId    String
   couponId      String?
+  paymentMethod String        @default("QRIS")
   subtotal      Int
   discount      Int           @default(0)
   total         Int
