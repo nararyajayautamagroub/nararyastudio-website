@@ -1,25 +1,25 @@
 # Roadmap
 
-## Implemented foundation
-- Public store, design, request, portfolio, project and cart pages
-- Prisma/PostgreSQL domain schema
-- Product catalog API
-- Custom request API with NS-REQ IDs
-- Checkout contract
-- Payment webhook security baseline
-- Customer/admin/support/FAQ/blog routes
-- SEO sitemap + robots
-- Security headers
-- GitHub Actions CI
+## Implemented
+- Responsive public pages: home, store, design, request, portfolio, projects, cart, support, FAQ and blog
+- PostgreSQL/Prisma models for products, users, sessions, orders, requests, quotations, revisions, reviews, wishlist, downloads, tickets and audit foundations
+- Product catalog API with search, pagination, New Release, Best Seller and Discount sorting/filtering
+- Checkout creates persisted orders and uses server-side price calculation
+- Login/register/logout with hashed passwords and HTTP-only sessions
+- Protected dashboard, customer order page and staff dashboard gate
+- HMAC-signed, idempotent payment webhook foundation
+- Protected download token issuance with expiry and maximum-download enforcement
+- SEO metadata, sitemap, robots and security headers
+- Reusable scraper CLI and documentation
+- CI schema validation, typecheck, tests and build
 
-## Next production integration
-1. Session authentication + password hashing + email verification
-2. RBAC enforcement on admin APIs
-3. Payment provider adapter + idempotent webhook event store
-4. Object storage + signed expiring downloads
-5. Order/invoice persistence and PDF generation
-6. Quotation approval + revision timeline
-7. Coupon, bundle, wishlist and reviews
-8. Notifications: email/Discord/WhatsApp/push
-9. Finance reports and audit log UI
-10. Playwright E2E + security regression tests
+## Remaining production modules
+1. Payment provider-specific adapter and payment-status mapping
+2. PDF invoice generation and invoice delivery
+3. Quotation approval/revision APIs and timeline UI
+4. Coupon, bundle and wishlist/review administration
+5. File upload pipeline with object-storage multipart uploads
+6. Notification providers for email, Discord, WhatsApp and push
+7. Finance reports and full audit-log administration
+8. Admin CRUD screens for products, customers, requests and content
+9. Playwright E2E and security regression suite
