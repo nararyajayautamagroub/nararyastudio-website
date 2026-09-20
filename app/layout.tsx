@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" dir="ltr">
       <body>
+        <script src="/js/nararya-bootstrap.js"></script>
         <script src="/js/nararya-gateway.js" defer></script>
         <I18nProvider>
           <Header />
