@@ -1,22 +1,24 @@
 # Roadmap
 
 ## Implemented
-- Responsive public pages: home, store, design, request, portfolio, projects, cart, support, FAQ and blog
-- PostgreSQL/Prisma models for products, users, sessions, orders, requests, quotations, revisions, reviews, wishlist, downloads, tickets, notifications and audit foundations
-- Product catalog API with search, pagination, New Release, Best Seller and Discount sorting/filtering
-- Checkout creates persisted orders and uses server-side price calculation
-- Login/register/logout with hashed passwords and HTTP-only sessions
-- Protected dashboard, customer orders, wishlist, quotations, invoices and notifications pages
-- HMAC-signed, idempotent payment webhook foundation with customer notifications
-- Protected download token issuance with expiry and maximum-download enforcement
-- Dependency-free server-side invoice PDF generation
-- SEO sitemap, robots and security headers
-- Next.js 16 proxy convention instead of deprecated middleware.ts
+
+- Responsive public pages and mobile navigation
+- Ten-language selector with Arabic RTL handling
+- Theme settings: system, light and dark
+- Google OAuth login, local password authentication and session controls
+- Product catalog/search/filter/pagination and server-side price calculation
+- Cart, checkout, order tracking, invoice PDF and digital downloads
+- Payment webhook verification and idempotent payment events
+- Wishlist, quotations, notifications and support tickets
+- Staff RBAC product/request/quotation APIs
+- PostgreSQL/Prisma schema and migrations
+- SEO metadata, sitemap, robots, security headers, error boundary and 404
 - Reusable scraper CLI and documentation
-- CI schema validation, typecheck, tests and build
+- CI schema validation, Prisma generation, typecheck, tests and production build
 - Legacy static frontend removed so the Next.js app is the single source of truth
 
 ## Remaining production modules
+
 1. Payment provider-specific adapter and payment-status mapping
 2. File upload pipeline with private object-storage multipart uploads
 3. Notification delivery providers for email, Discord, WhatsApp and push
