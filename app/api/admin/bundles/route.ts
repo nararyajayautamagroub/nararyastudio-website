@@ -21,7 +21,7 @@ export async function POST(req:Request){
   try{
     const b=await req.json(),name=safeText(b.name,160),description=safeText(b.description,5000),discountPercent=Number(b.discountPercent??0),products=Array.isArray(b.products)?b.products:[];
     if(!name||!description||!Number.isInteger(discountPercent)||discountPercent<0||discountPercent>100||products.length<1||products.length>50)return NextResponse.json({error:"Data bundle tidak valid."},{status:400});
-    const productIds=[...new Set(products.flatMap((p:unknown)=>{const id=safeText(p,80);return id?[id]:[]}))];
+    const productIds: string[] = [...new Set(products.flatMap((p: unknown): string[] => { const id = safeText(p, 80); return id ? [id] : []; }))];
     const dbProducts=await db.product.findMany({where:{productId:{in:productIds},status:"PUBLISHED"},select:{id:true,productId:true}});
     if(dbProducts.length!==productIds.length)return NextResponse.json({error:"Ada product bundle yang tidak tersedia."},{status:400});
     const productMap=new Map(dbProducts.map(p=>[p.productId,p.id]));
