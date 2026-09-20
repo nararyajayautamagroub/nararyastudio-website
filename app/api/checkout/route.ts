@@ -18,6 +18,11 @@ export async function POST(req: Request) {
     const name = safeText(body.name, 120);
     const email = safeText(body.email, 160).toLowerCase();
     const couponCode = safeText(body.couponCode, 64).toUpperCase();
+    const paymentMethod = safeText(body.paymentMethod, 32).toUpperCase();
+    const allowedPaymentMethods = ["QRIS", "VIRTUAL_ACCOUNT", "BANK_TRANSFER", "E_WALLET"] as const;
+    if (!allowedPaymentMethods.includes(paymentMethod as (typeof allowedPaymentMethods)[number])) {
+      return NextResponse.json({ error: "Metode pembayaran tidak valid." }, { status: 400 });
+    }
 
     if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > 50) {
       return NextResponse.json({ error: "Keranjang tidak valid." }, { status: 400 });
@@ -103,6 +108,7 @@ export async function POST(req: Request) {
           orderId: orderId(),
           customerId: customer.id,
           couponId: coupon?.id ?? null,
+          paymentMethod,
           subtotal,
           discount: couponDiscount,
           total,
@@ -127,6 +133,7 @@ export async function POST(req: Request) {
       discount: result.discount,
       status: result.status,
       paymentStatus: result.paymentStatus,
+      paymentMethod: result.paymentMethod,
     }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
