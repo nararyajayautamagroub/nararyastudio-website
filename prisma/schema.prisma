@@ -72,6 +72,7 @@ model User {
   username      String            @unique
   email         String            @unique
   passwordHash  String
+  role          StaffRole?
   googleId      String?           @unique
   locale        String            @default("id")
   theme         String            @default("system")
