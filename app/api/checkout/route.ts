@@ -33,14 +33,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Nama dan email valid wajib diisi." }, { status: 400 });
       }
       customer = await db.user.findUnique({ where: { email } });
-      if (!customer) {
-        const base = (email.split("@")[0].replace(/[^a-z0-9_]/g, "").slice(0, 32) || "customer");
-        let username = base;
-        for (let n = 1; await db.user.findUnique({ where: { username } }); n++) {
-          username = base + n;
-        }
-        customer = await db.user.create({ data: { name, username, email, passwordHash: "REQUEST_ONLY" } });
+      if (customer) {
+        return NextResponse.json({ error: "Email sudah terdaftar. Login terlebih dahulu untuk checkout dengan akun ini." }, { status: 409 });
       }
+      const base = (email.split("@")[0].replace(/[^a-z0-9_]/g, "").slice(0, 32) || "customer");
+      let username = base;
+      for (let n = 1; await db.user.findUnique({ where: { username } }); n++) {
+        username = base + n;
+      }
+      customer = await db.user.create({ data: { name, username, email, passwordHash: "REQUEST_ONLY" } });
     }
 
     if (sessionUser && requestedCustomerId && requestedCustomerId !== sessionUser.id) {
