@@ -9,9 +9,9 @@
 - Product catalog/search/filter/pagination and server-side price calculation
 - Cart, checkout, order tracking, invoice PDF and digital downloads
 - Payment webhook verification and idempotent payment events
-- Wishlist, quotations, notifications and support tickets
-- Staff RBAC product/request/quotation APIs
-- PostgreSQL/Prisma schema and migrations
+- Wishlist, quotations, notifications, support tickets, coupons, bundles and reviews
+- Staff RBAC product/request/quotation/review/content/coupon/finance APIs and dashboards
+- PostgreSQL/Prisma schema and migrations for accounts, commerce and CMS
 - SEO metadata, sitemap, robots, security headers, error boundary and 404
 - Reusable scraper CLI and documentation
 - CI schema validation, Prisma generation, typecheck, tests and production build
@@ -22,8 +22,6 @@
 1. Payment provider-specific adapter and payment-status mapping
 2. File upload pipeline with private object-storage multipart uploads
 3. Notification delivery providers for email, Discord, WhatsApp and push
-4. Finance reports and full audit-log administration
-5. Full admin CRUD UI for customers, requests, quotations, content and files
-6. Database-backed portfolio/blog/project CMS
-7. Coupon, bundle and review administration
-8. Playwright E2E and security regression suite
+4. Full audit-log administration and broader staff/customer CRUD
+5. Database-backed analytics/telemetry dashboard
+6. Playwright E2E and security regression suite
