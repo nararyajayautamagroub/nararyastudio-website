@@ -1,2 +1,27 @@
 import type { MetadataRoute } from "next";
-export default function robots():MetadataRoute.Robots{return{rules:{userAgent:"*",allow:"/",disallow:["/api/","/admin/","/dashboard/"]},sitemap:(process.env.NEXT_PUBLIC_SITE_URL||"http://localhost:3000")+"/sitemap.xml"}}
+
+export default function robots(): MetadataRoute.Robots {
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/dashboard",
+          "/orders",
+          "/invoices",
+          "/quotations",
+          "/notifications",
+          "/wishlist",
+          "/settings",
+          "/login",
+          "/checkout"
+        ]
+      }
+    ],
+    sitemap: base + "/sitemap.xml"
+  };
+}
