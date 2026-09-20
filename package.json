@@ -1,6 +1,6 @@
 {
   "name":"nararya-studio",
-  "version":"1.4.1",
+  "version":"1.4.2",
   "private":true,
   "scripts":{
     "dev":"next dev",
@@ -32,5 +32,8 @@
     "tsx":"4.23.13",
     "typescript":"7.0.2",
     "vitest":"5.0.1"
+  },
+  "overrides":{
+    "deepmerge-ts":"8.0.1"
   }
 }
