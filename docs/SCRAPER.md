@@ -10,6 +10,10 @@ Crawler beberapa halaman dari domain yang sama:
 
     npm run scrape -- https://example.com --same-origin --max-pages 25
 
+Dengan delay dan timeout:
+
+    npm run scrape -- https://example.com --same-origin --max-pages 50 --delay 500 --timeout 15000
+
 Konfigurasi banyak sumber:
 
     {
@@ -22,6 +26,8 @@ Konfigurasi banyak sumber:
 Lalu:
 
     npm run scrape -- --config scraper-config.json --out scrape-output.json
+
+Scraper menghormati robots.txt secara default dan membatasi jumlah halaman, timeout, serta jeda antar halaman.
 
 Data yang dikumpulkan dari HTML mencakup title, description, canonical, Open Graph, headings, JSON-LD, tautan dan teks yang sudah dibersihkan.
 
