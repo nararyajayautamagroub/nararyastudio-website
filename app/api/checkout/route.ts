@@ -54,10 +54,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Customer tidak sesuai session." }, { status: 403 });
     }
 
-    const ids: string[] = body.items
-      .map((x: unknown) => safeText((x as { productId?: unknown })?.productId ?? (x as { id?: unknown })?.id, 80))
-      .filter((value): value is string => Boolean(value));
-    const uniqueIds: string[] = [...new Set(ids)];
+    const ids:string[]=[];
+    for(const item of body.items as unknown[]){
+      const x=item as {productId?:unknown;id?:unknown};
+      const id=safeText(x.productId??x.id,80);
+      if(id&&!ids.includes(id))ids.push(id);
+    }
+    const uniqueIds:string[]=ids.slice();
     const products = await db.product.findMany({
       where: { productId: { in: uniqueIds }, status: "PUBLISHED" },
     });
