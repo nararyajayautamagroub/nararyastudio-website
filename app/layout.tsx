@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Header } from "@/components/header";
 import { I18nProvider } from "@/components/i18n-provider";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   title: "NARARYA STUDIO | Digital Creative Studio",
@@ -23,8 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" dir="ltr">
       <body>
-        <script src="/js/nararya-bootstrap.js"></script>
-        <script src="/js/nararya-gateway.js" defer></script>
+        <Script src="/js/nararya-bootstrap.js" strategy="beforeInteractive" />
+        <Script src="/js/nararya-gateway.js" strategy="afterInteractive" />
         <I18nProvider>
           <Header />
           {children}
