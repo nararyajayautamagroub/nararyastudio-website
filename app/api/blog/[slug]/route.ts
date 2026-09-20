@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+export async function GET(_:Request,{params}:{params:Promise<{slug:string}>}){try{const{slug}=await params;const post=await db.blogPost.findFirst({where:{slug,published:true},select:{id:true,slug:true,title:true,excerpt:true,content:true,coverImage:true,author:true,tags:true,publishedAt:true,createdAt:true}});if(!post)return NextResponse.json({error:"Artikel tidak ditemukan."},{status:404});return NextResponse.json({post})}catch{return NextResponse.json({error:"Gagal memuat artikel."},{status:500})}}
