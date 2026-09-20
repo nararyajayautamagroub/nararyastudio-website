@@ -127,6 +127,7 @@ model Product {
   wishlist   WishlistItem[]
   reviews    Review[]
   downloads  DownloadLog[]
+  bundleItems BundleItem[]
 
   @@index([status, category])
   @@index([salesCount])
@@ -183,6 +184,7 @@ model Order {
   id            String        @id @default(cuid())
   orderId       String        @unique
   customerId    String
+  couponId      String?
   subtotal      Int
   discount      Int           @default(0)
   total         Int
@@ -193,11 +195,13 @@ model Order {
   updatedAt     DateTime      @updatedAt
 
   customer      User           @relation(fields: [customerId], references: [id])
+  coupon        Coupon?        @relation(fields: [couponId], references: [id], onDelete: SetNull)
   items         OrderItem[]
   downloads     DownloadLog[]
   paymentEvents PaymentEvent[]
 
   @@index([customerId, createdAt])
+  @@index([couponId])
   @@index([paymentStatus, status])
 }
 
@@ -375,6 +379,54 @@ model BlogPost {
 
   @@index([published, publishedAt])
   @@index([createdAt])
+}
+
+model Coupon {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  discountPercent Int?
+  discountFixed   Int?
+  minSubtotal     Int      @default(0)
+  maxUses         Int?
+  usedCount       Int      @default(0)
+  active          Boolean  @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([active, startsAt, endsAt])
+}
+
+model Bundle {
+  id              String       @id @default(cuid())
+  bundleId        String       @unique
+  slug            String       @unique
+  name            String
+  description     String
+  discountPercent Int          @default(0)
+  active          Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  items BundleItem[]
+
+  @@index([active, createdAt])
+}
+
+model BundleItem {
+  id        String  @id @default(cuid())
+  bundleId  String
+  productId String
+  quantity  Int     @default(1)
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([bundleId, productId])
+  @@index([productId])
 }
 
 model AuditLog {
