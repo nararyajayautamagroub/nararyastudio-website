@@ -10,7 +10,8 @@ const get = (name, fallback = "") => {
 const urls = args.filter((x) => /^https?:\/\//i.test(x));
 const configPath = get("--config");
 const out = get("--out", "scrape-output.json");
-const sameOrigin = args.includes("--same-origin");
+const allOrigins = args.includes("--all-origins");
+const sameOrigin = args.includes("--same-origin") || !allOrigins;
 const ignoreRobots = args.includes("--ignore-robots");
 const maxPages = Math.min(200, Math.max(1, Number(get("--max-pages", "50")) || 50));
 const timeoutMs = Math.min(30000, Math.max(2000, Number(get("--timeout", "10000")) || 10000));
@@ -40,6 +41,11 @@ function meta(html, name, property) {
   const re = property ? new RegExp("<meta[^>]+property=[\"']" + property + "[\"'][^>]*>", "i") : new RegExp("<meta[^>]+name=[\"']" + name + "[\"'][^>]*>", "i");
   const tag = html.match(re)?.[0];
   return tag ? attr(tag, "content") : null;
+}
+
+function canonical(html, base) {
+  const tag = html.match(/<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i)?.[0];
+  return tag ? absolute(base, attr(tag, "href") || "") : null;
 }
 
 function jsonLd(html) {
@@ -165,7 +171,7 @@ async function main() {
       if (page.contentType.includes("html") || /<html[\s>]/i.test(page.body)) {
         item.title = page.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim() || null;
         item.description = meta(page.body, "description");
-        item.canonical = absolute(page.url, meta(page.body, "", "canonical") || "");
+        item.canonical = canonical(page.body, page.url);
         item.og = { title: meta(page.body, "", "og:title"), description: meta(page.body, "", "og:description"), image: meta(page.body, "", "og:image") };
         item.headings = [...page.body.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)].slice(0, 50).map((m) => ({ level: Number(m[1]), text: strip(m[2]).slice(0, 300) }));
         item.text = strip(page.body).slice(0, 20000);
