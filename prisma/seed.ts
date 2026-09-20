@@ -126,6 +126,52 @@ async function main() {
       }
     });
   }
+
+  await db.coupon.upsert({
+    where: { code: "WELCOME10" },
+    update: {},
+    create: {
+      code: "WELCOME10",
+      discountPercent: 10,
+      minSubtotal: 50000,
+      active: true
+    }
+  });
+
+  const bundleItems = await db.product.findMany({
+    where: { productId: { in: ["NS-PROD-000001", "NS-PROD-000002"] } },
+    select: { id: true, productId: true }
+  });
+
+  const bundle = await db.bundle.upsert({
+    where: { bundleId: "NS-BND-000001" },
+    update: {},
+    create: {
+      bundleId: "NS-BND-000001",
+      slug: "creative-start-bundle",
+      name: "Creative Start Bundle",
+      description: "Starter bundle for digital creative assets.",
+      discountPercent: 10,
+      active: true
+    }
+  });
+
+  for (const product of bundleItems) {
+    await db.bundleItem.upsert({
+      where: {
+        bundleId_productId: {
+          bundleId: bundle.id,
+          productId: product.id
+        }
+      },
+      update: { quantity: 1 },
+      create: {
+        bundleId: bundle.id,
+        productId: product.id,
+        quantity: 1
+      }
+    });
+  }
 }
 
 main()
