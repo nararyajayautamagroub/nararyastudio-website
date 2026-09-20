@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/admin";
 import { safeText } from "@/lib/security";
+import { writeAudit } from "@/lib/audit";
 
 const statuses = ["OPEN", "IN_PROGRESS", "WAITING_CUSTOMER", "RESOLVED", "CLOSED"] as const;
 
@@ -22,6 +23,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         type: "SUPPORT"
       }
     });
+    await writeAudit({ actorId: staff.id, action: "UPDATE_STATUS", entity: "Ticket", entityId: ticket.id, metadata: { status: ticket.status } });
     return NextResponse.json({ ticket });
   } catch {
     return NextResponse.json({ error: "Ticket tidak ditemukan." }, { status: 404 });
