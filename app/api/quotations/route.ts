@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{getSessionUser}from"@/lib/auth";import{db}from"@/lib/db";
+export async function GET(){const user=await getSessionUser();if(!user)return NextResponse.json({error:"Unauthorized"},{status:401});const quotations=await db.quotation.findMany({where:{request:{customerId:user.id}},orderBy:{validUntil:"desc"},include:{request:{select:{requestId:true,serviceType:true,status:true,description:true}}}});return NextResponse.json({quotations})}
