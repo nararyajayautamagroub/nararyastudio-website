@@ -72,7 +72,9 @@ model User {
   username      String            @unique
   email         String            @unique
   passwordHash  String
-  role          StaffRole?
+  googleId      String?           @unique
+  locale        String            @default("id")
+  theme         String            @default("system")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   orders        Order[]
@@ -163,7 +165,7 @@ model Quotation {
   scope         String
   price         Int
   discount      Int      @default(0)
-  extras        Int      @default(0)
+  extras        Int       @default(0)
   total         Int
   deadline      DateTime?
   revisionCount Int      @default(2)
