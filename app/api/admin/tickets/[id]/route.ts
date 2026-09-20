@@ -6,7 +6,7 @@ import { safeText } from "@/lib/security";
 const statuses = ["OPEN", "IN_PROGRESS", "WAITING_CUSTOMER", "RESOLVED", "CLOSED"] as const;
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const staff = await requireStaff(["SUPER_ADMIN", "ADMIN", "CUSTOMER_SUPPORT"]);
+  const staff = await requireStaff(["SUPER_ADMIN", "ADMIN", "SUPPORT"]);
   if (!staff) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
     const { id } = await params;
