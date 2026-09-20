@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Header } from "@/components/header";
 import { I18nProvider } from "@/components/i18n-provider";
 import Script from "next/script";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "NARARYA STUDIO | Digital Creative Studio",
@@ -30,12 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           {children}
         </I18nProvider>
-        <footer className="border-t border-violet-100 mt-20">
-          <div className="container-ns py-10 flex flex-col md:flex-row gap-4 justify-between text-sm text-neutral-500">
-            <span>© 2026 NARARYA STUDIO. All rights reserved.</span>
-            <span>Digital Creative Studio · Indonesia</span>
-          </div>
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );
