@@ -3,45 +3,53 @@
 Digital Creative Studio, Digital Product Store, Design Service & Custom Request.
 
 ## Current implementation
-- Next.js + TypeScript + Tailwind CSS
-- Responsive public pages: home, store, product detail, design, request, portfolio, projects, cart
-- Customer pages: login, dashboard, orders, invoices, quotations, wishlist, notifications
-- Support, FAQ and blog pages
-- Prisma + PostgreSQL production domain schema
-- Product catalog API with search/category filtering
-- Custom request API with NS-REQ identifiers and request statuses
-- Checkout API contract and payment webhook security baseline
-- Ticket API
-- SEO sitemap + robots
-- Security headers
-- Seed data for initial products
-- GitHub Actions CI
-- Architecture, API and production roadmap documentation
 
-## Business modules modeled
-Products, versions, licenses, categories, cart, checkout, payments, orders, digital delivery logs, requests, quotations, revisions, projects, portfolio, wishlist, reviews, tickets, notifications, finance/audit foundations and staff roles.
+- Next.js + TypeScript + Tailwind CSS with responsive public pages
+- Store search, pagination and functional category filters
+- Product detail with discount pricing and safe public fields
+- Resilient browser cart and connected checkout-to-order flow
+- Secure password hashing with scrypt and 7-day HTTP-only session cookies
+- Login, registration, logout and authenticated customer dashboard
+- Protected customer routes and staff dashboard gate
+- Order API and protected expiring digital download links
+- Payment webhook verification using HMAC SHA-256 and idempotent event records
+- PostgreSQL + Prisma domain schema and migration for sessions/payment events
+- Custom request API with NS-REQ identifiers and validation
+- SEO sitemap + robots and hardened security headers
+- Reusable scraper CLI for permitted HTML sources
+- GitHub Actions CI for schema validation, typecheck, tests and production build
 
-## Production requirements before accepting real payments
-1. Configure PostgreSQL and run Prisma migration.
-2. Add real session authentication and password hashing.
-3. Enforce RBAC on every admin/finance endpoint.
-4. Connect a payment gateway and store webhook events idempotently.
-5. Connect private object storage and signed, expiring download URLs.
-6. Generate invoices server-side.
-7. Add email/Discord/WhatsApp notification providers.
-8. Add Playwright E2E, API, security and checkout regression tests.
-9. Configure deployment secrets in the hosting provider.
+## Scraper
+
+Run:
+
+    npm run scrape -- https://example.com --out scrape-output.json
+
+For a same-origin crawl:
+
+    npm run scrape -- https://example.com --same-origin --max-pages 25
+
+The scraper extracts title, description, canonical, Open Graph, headings, JSON-LD, links and cleaned text. It does not bypass authentication, CAPTCHA, paywalls, rate limits or access controls.
 
 ## Environment
-Copy `.env.example` to `.env` and configure production values.
 
-## Run
-```bash
-npm install
-npm run db:generate
-npm run db:migrate
-npm run db:seed
-npm run dev
-```
+Copy .env.example to .env and configure DATABASE_URL, NEXT_PUBLIC_SITE_URL, PAYMENT_WEBHOOK_SECRET and STORAGE_BASE_URL.
 
-Prices, product states, quotations and mutable business content are intentionally modeled as database data rather than hardcoded frontend state.
+## Local run
+
+    npm install
+    npm run db:generate
+    npm run db:validate
+    npm run db:migrate
+    npm run db:seed
+    npm run dev
+
+## Before accepting real payments
+
+1. Configure a real payment provider and map its signed webhook format to the HMAC contract.
+2. Configure private object storage and use file paths that resolve from STORAGE_BASE_URL or absolute HTTPS URLs.
+3. Assign staff roles in the database before opening /admin.
+4. Add transactional email/Discord/WhatsApp providers as required.
+5. Run production E2E/security tests against a staging database.
+
+No repository change can honestly guarantee that every runtime issue is impossible. The CI pipeline is the final automated gate, while production credentials, database state, payment provider behavior and hosting configuration remain environment-specific.
