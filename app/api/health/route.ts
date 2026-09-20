@@ -1,2 +1,2 @@
-import { NextResponse } from "next/server";
-export async function GET(){return NextResponse.json({ok:true,service:"nararya-studio",timestamp:new Date().toISOString()})}
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+export async function GET(){const started=Date.now();try{await db.$queryRaw\`SELECT 1\`;return NextResponse.json({status:"ok",database:"ok",latencyMs:Date.now()-started,timestamp:new Date().toISOString()})}catch{return NextResponse.json({status:"degraded",database:"error",latencyMs:Date.now()-started,timestamp:new Date().toISOString()},{status:503})}}
