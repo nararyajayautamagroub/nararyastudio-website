@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { safeText } from "@/lib/security";
 import { writeAudit } from "@/lib/audit";
 
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
           orderId: order.id,
           status: paymentStatus,
           amount: Number.isFinite(amount) ? Math.round(amount) : null,
-          payload: body
+          payload: body as Prisma.InputJsonValue
         }
       });
 
