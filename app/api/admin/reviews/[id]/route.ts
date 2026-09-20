@@ -1,0 +1,4 @@
+import{NextResponse}from"next/server";import{requireStaff}from"@/lib/admin";import{db}from"@/lib/db";
+const ROLES=["SUPER_ADMIN","ADMIN","CONTENT_MANAGER"] as const;
+export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){const staff=await requireStaff(ROLES);if(!staff)return NextResponse.json({error:"Forbidden"},{status:403});try{const{id}=await params,b=await req.json(),approved=Boolean(b.approved);const review=await db.review.update({where:{id},data:{approved}});return NextResponse.json({review})}catch{return NextResponse.json({error:"Review tidak ditemukan."},{status:404})}}
+export async function DELETE(_:Request,{params}:{params:Promise<{id:string}>}){const staff=await requireStaff(ROLES);if(!staff)return NextResponse.json({error:"Forbidden"},{status:403});try{const{id}=await params;await db.review.delete({where:{id}});return NextResponse.json({ok:true})}catch{return NextResponse.json({error:"Review tidak ditemukan."},{status:404})}}
