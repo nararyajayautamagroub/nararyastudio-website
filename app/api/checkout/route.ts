@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const ids = body.items
       .map((x: unknown) => safeText((x as { productId?: unknown })?.productId ?? (x as { id?: unknown })?.id, 80))
       .filter(Boolean);
-    const uniqueIds = [...new Set(ids)];
+    const uniqueIds: string[] = [...new Set(ids)];
     const products = await db.product.findMany({
       where: { productId: { in: uniqueIds }, status: "PUBLISHED" },
     });
