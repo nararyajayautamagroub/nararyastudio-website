@@ -54,9 +54,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Customer tidak sesuai session." }, { status: 403 });
     }
 
-    const ids = body.items
+    const ids: string[] = body.items
       .map((x: unknown) => safeText((x as { productId?: unknown })?.productId ?? (x as { id?: unknown })?.id, 80))
-      .filter(Boolean);
+      .filter((value): value is string => Boolean(value));
     const uniqueIds: string[] = [...new Set(ids)];
     const products = await db.product.findMany({
       where: { productId: { in: uniqueIds }, status: "PUBLISHED" },
