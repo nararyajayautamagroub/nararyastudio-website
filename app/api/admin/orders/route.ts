@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/admin";
 import { safeText } from "@/lib/security";
 import { writeAudit } from "@/lib/audit";
+import { randomBytes } from "node:crypto";
 import type { PaymentStatus } from "@prisma/client";
 
 const statuses: PaymentStatus[] = ["PENDING", "PAID", "FAILED", "EXPIRED", "REFUNDED"];
@@ -29,8 +30,8 @@ export async function PATCH(req: Request) {
     const order = await db.order.findUnique({ where: { orderId }, include: { items: true } });
     if (!order) return NextResponse.json({ error: "Order tidak ditemukan." }, { status: 404 });
     const updated = await db.$transaction(async (tx) => {
-      const changed = await tx.order.update({ where: { id: order.id }, data: { paymentStatus: status, status: status === "PAID" ? "PAID" : status === "REFUNDED" ? "REFUNDED" : "CANCELLED" } });
-      await tx.paymentEvent.create({ data: { eventId: "admin:" + order.id + ":" + Date.now(), orderId: order.id, status, amount: order.total, payload: { actorId: staff.id, manual: true } } });
+      const changed = await tx.order.update({ where: { id: order.id }, data: { paymentStatus: status, status: status === "PAID" ? "PAID" : status === "REFUNDED" ? "REFUNDED" : status === "PENDING" ? "PENDING" : "CANCELLED" } });
+      await tx.paymentEvent.create({ data: { eventId: "admin:" + order.id + ":" + Date.now() + ":" + randomBytes(6).toString("hex"), orderId: order.id, status, amount: order.total, payload: { actorId: staff.id, manual: true } } });
       if (status === "PAID" && order.paymentStatus !== "PAID") {
         for (const item of order.items) await tx.product.update({ where: { id: item.productId }, data: { salesCount: { increment: item.quantity } } });
       }
