@@ -1,0 +1,11 @@
+"use client";
+import { useEffect, useState } from "react";
+type RequestItem={id:string;requestId:string;serviceType:string;description:string;status:string;quotedPrice:number|null;customer:{name:string;email:string};quotations:{id:string;total:number;approvedAt:string|null}[]};
+const statuses=["SUBMITTED","REVIEWING","QUOTATION","WAITING_PAYMENT","PAID","IN_PROGRESS","REVISION","FINAL_REVIEW","COMPLETED","CANCELLED","REJECTED","ON_HOLD","EXPIRED"];
+export default function RequestsAdmin(){
+ const[data,setData]=useState<RequestItem[]>([]),[error,setError]=useState(""),[loading,setLoading]=useState(true);
+ async function load(){setLoading(true);try{const r=await fetch("/api/admin/requests");const x=await r.json();if(!r.ok)throw new Error(x.error||"Gagal memuat request");setData(x.requests||[])}catch(e){setError(e instanceof Error?e.message:"Gagal memuat request")}finally{setLoading(false)}}
+ useEffect(()=>{load()},[]);
+ async function update(id:string,status:string){const r=await fetch("/api/admin/requests/"+encodeURIComponent(id),{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status})});const x=await r.json();if(!r.ok){setError(x.error||"Update gagal");return}setData(prev=>prev.map(i=>i.id===id?{...i,status,quotedPrice:x.request.quotedPrice}:i))}
+ return <main className="page"><div className="eyebrow">ADMIN / REQUESTS</div><h1>Request Management</h1>{loading&&<p className="muted mt-6">Memuat requests...</p>}{error&&<div className="card p-4 mt-6 text-red-700" role="alert">{error}</div>}<div className="stack mt-6">{data.map(i=><article className="card p-6" key={i.id}><div className="flex flex-wrap justify-between gap-4"><div><b>{i.requestId}</b><h2 className="text-xl font-bold mt-1">{i.serviceType}</h2><p className="text-sm muted mt-1">{i.customer.name} · {i.customer.email}</p></div><select value={i.status} onChange={e=>update(i.id,e.target.value)}>{statuses.map(s=><option value={s} key={s}>{s}</option>)}</select></div><p className="mt-4 whitespace-pre-line">{i.description}</p><p className="text-sm muted mt-4">Quoted price: {i.quotedPrice===null?"Belum ada":i.quotedPrice.toLocaleString("id-ID")+" IDR"}</p><p className="text-xs muted mt-2">Quotations: {i.quotations.length}</p></article>)}</div></main>
+}
