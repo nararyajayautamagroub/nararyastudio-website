@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { orderId, safeText, isValidEmail } from "@/lib/security";
 import { rateLimit } from "@/lib/rate-limit";
 import { calculateCouponDiscount } from "@/lib/coupons";
+import { writeAudit } from "@/lib/audit";
 
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -126,6 +127,8 @@ export async function POST(req: Request) {
       });
       return order;
     });
+
+    await writeAudit({ actorId: customer.id, action: "CREATE", entity: "Order", entityId: result.id, metadata: { orderId: result.orderId, paymentMethod: result.paymentMethod } });
 
     return NextResponse.json({
       orderId: result.orderId,
