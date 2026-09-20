@@ -28,9 +28,16 @@ export async function PATCH(req: Request) {
     if (!orderId || !statuses.includes(status)) return NextResponse.json({ error: "Payment status tidak valid." }, { status: 400 });
     const order = await db.order.findUnique({ where: { orderId }, include: { items: true } });
     if (!order) return NextResponse.json({ error: "Order tidak ditemukan." }, { status: 404 });
-    const updated = await db.order.update({ where: { id: order.id }, data: { paymentStatus: status, status: status === "PAID" ? "PAID" : status === "REFUNDED" ? "REFUNDED" : "PENDING" } });
+    const updated = await db.$transaction(async (tx) => {
+      const changed = await tx.order.update({ where: { id: order.id }, data: { paymentStatus: status, status: status === "PAID" ? "PAID" : status === "REFUNDED" ? "REFUNDED" : "CANCELLED" } });
+      await tx.paymentEvent.create({ data: { eventId: "admin:" + order.id + ":" + Date.now(), orderId: order.id, status, amount: order.total, payload: { actorId: staff.id, manual: true } } });
+      if (status === "PAID" && order.paymentStatus !== "PAID") {
+        for (const item of order.items) await tx.product.update({ where: { id: item.productId }, data: { salesCount: { increment: item.quantity } } });
+      }
+      await tx.notification.create({ data: { userId: order.customerId, title: "Status pembayaran diperbarui", message: "Order " + order.orderId + " sekarang " + status + ".", type: "PAYMENT" } });
+      return changed;
+    });
     await writeAudit({ actorId: staff.id, action: "UPDATE_PAYMENT_STATUS", entity: "Order", entityId: order.id, metadata: { orderId, from: order.paymentStatus, to: status } });
-    await db.notification.create({ data: { userId: order.customerId, title: "Status pembayaran diperbarui", message: "Order " + order.orderId + " sekarang " + status + ".", type: "PAYMENT" } });
     return NextResponse.json({ order: updated });
   } catch {
     return NextResponse.json({ error: "Update order gagal." }, { status: 500 });
