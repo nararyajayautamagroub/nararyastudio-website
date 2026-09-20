@@ -37,8 +37,6 @@ CREATE TABLE "BundleItem" (
 
 ALTER TABLE "Order" ADD COLUMN "couponId" TEXT;
 
-ALTER TABLE "Product" ADD CONSTRAINT "Product_bundleItems_placeholder" CHECK (1=1);
-
 CREATE UNIQUE INDEX "Coupon_code_key" ON "Coupon"("code");
 CREATE INDEX "Coupon_active_startsAt_endsAt_idx" ON "Coupon"("active","startsAt","endsAt");
 CREATE UNIQUE INDEX "Bundle_bundleId_key" ON "Bundle"("bundleId");
@@ -59,5 +57,3 @@ FOREIGN KEY ("bundleId") REFERENCES "Bundle"("id") ON DELETE CASCADE ON UPDATE C
 ALTER TABLE "BundleItem"
 ADD CONSTRAINT "BundleItem_productId_fkey"
 FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
-ALTER TABLE "Product" DROP CONSTRAINT "Product_bundleItems_placeholder";
