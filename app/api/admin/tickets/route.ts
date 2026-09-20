@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/admin";
 
 export async function GET() {
-  const staff = await requireStaff(["SUPER_ADMIN", "ADMIN", "CUSTOMER_SUPPORT"]);
+  const staff = await requireStaff(["SUPER_ADMIN", "ADMIN", "SUPPORT"]);
   if (!staff) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const tickets = await db.ticket.findMany({
     orderBy: { createdAt: "desc" },
