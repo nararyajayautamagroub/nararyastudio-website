@@ -18,7 +18,8 @@ export async function GET(req:Request){
   const error=url.searchParams.get("error");
   const requestCookies=req.headers.get("cookie")||"";
   const match=requestCookies.match(/(?:^|;\s*)ns_oauth_state=([^;]+)/);
-  const stored=match?decodeURIComponent(match[1]):"";
+  let stored="";
+  if(match){try{stored=decodeURIComponent(match[1])}catch{return NextResponse.redirect(new URL("/login?error=google_cookie",url.origin))}}
   if(error||!code||!state||!stored)return NextResponse.redirect(new URL("/login?error=google_denied",url.origin));
   const split=stored.indexOf(":");
   const expected=split>=0?stored.slice(0,split):stored;
