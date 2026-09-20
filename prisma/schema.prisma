@@ -11,7 +11,7 @@ enum StaffRole { SUPER_ADMIN ADMIN FINANCE DESIGNER ARTIST_3D SUPPORT PRODUCT_MA
 model User {
  id String @id @default(cuid()); name String; username String @unique; email String @unique
  passwordHash String; role StaffRole?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
- orders Order[]; requests ServiceRequest[]; reviews Review[]; wishlist WishlistItem[]; downloads DownloadLog[]; tickets Ticket[]; sessions UserSession[]
+ orders Order[]; requests ServiceRequest[]; reviews Review[]; wishlist WishlistItem[]; downloads DownloadLog[]; tickets Ticket[]; sessions UserSession[]; notifications Notification[]
 }
 model UserSession {
  id String @id @default(cuid()); userId String; tokenHash String @unique; expiresAt DateTime; createdAt DateTime @default(now())
@@ -70,6 +70,11 @@ model Revision {
 model Ticket {
  id String @id @default(cuid()); ticketId String @unique; userId String; subject String; category String; message String; status String @default("OPEN"); createdAt DateTime @default(now())
  user User @relation(fields:[userId],references:[id])
+}
+model Notification {
+ id String @id @default(cuid()); userId String; title String; message String; type String @default("GENERAL"); readAt DateTime?; createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ @@index([userId,createdAt]); @@index([userId,readAt])
 }
 model AuditLog {
  id String @id @default(cuid()); actorId String?; action String; entity String; entityId String?; metadata Json?; ipHash String?; createdAt DateTime @default(now())
