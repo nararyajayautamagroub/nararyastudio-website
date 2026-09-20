@@ -11,11 +11,16 @@ enum StaffRole { SUPER_ADMIN ADMIN FINANCE DESIGNER ARTIST_3D SUPPORT PRODUCT_MA
 model User {
  id String @id @default(cuid()); name String; username String @unique; email String @unique
  passwordHash String; role StaffRole?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
- orders Order[]; requests ServiceRequest[]; reviews Review[]; wishlist WishlistItem[]; downloads DownloadLog[]; tickets Ticket[]
+ orders Order[]; requests ServiceRequest[]; reviews Review[]; wishlist WishlistItem[]; downloads DownloadLog[]; tickets Ticket[]; sessions UserSession[]
+}
+model UserSession {
+ id String @id @default(cuid()); userId String; tokenHash String @unique; expiresAt DateTime; createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ @@index([userId]); @@index([expiresAt])
 }
 model Product {
  id String @id @default(cuid()); productId String @unique; name String; slug String @unique; description String
- category String; price Int; discount Int @default(0); thumbnail String?; gallery Json?
+ category String; price Int; discount Int @default(0); salesCount Int @default(0); thumbnail String?; gallery Json?
  filePath String?; version String @default("1.0.0"); changelog String?; license String?
  compatibility String?; requirements String?; author String?; status ProductStatus @default(DRAFT)
  createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; orderItems OrderItem[]; wishlist WishlistItem[]; reviews Review[]; downloads DownloadLog[]
@@ -34,15 +39,38 @@ model Quotation {
 model Order {
  id String @id @default(cuid()); orderId String @unique; customerId String; subtotal Int; discount Int @default(0); total Int
  paymentStatus PaymentStatus @default(PENDING); status OrderStatus @default(PENDING); invoicePath String?; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt
- customer User @relation(fields:[customerId],references:[id]); items OrderItem[]; downloads DownloadLog[]
+ customer User @relation(fields:[customerId],references:[id]); items OrderItem[]; downloads DownloadLog[]; paymentEvents PaymentEvent[]
 }
-model OrderItem { id String @id @default(cuid()); orderId String; productId String; quantity Int @default(1); price Int; discount Int @default(0)
- order Order @relation(fields:[orderId],references:[id]); product Product @relation(fields:[productId],references:[id])
+model OrderItem {
+ id String @id @default(cuid()); orderId String; productId String; quantity Int @default(1); price Int; discount Int @default(0)
+ order Order @relation(fields:[orderId],references:[id],onDelete:Cascade); product Product @relation(fields:[productId],references:[id])
 }
-model DownloadLog { id String @id @default(cuid()); userId String; productId String; orderId String?; tokenHash String; expiresAt DateTime; count Int @default(0); maxDownloads Int?
- user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); order Order? @relation(fields:[orderId],references:[id]) }
-model WishlistItem { id String @id @default(cuid()); userId String; productId String; createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); @@unique([userId,productId]) }
-model Review { id String @id @default(cuid()); userId String; productId String; rating Int; title String?; body String; approved Boolean @default(false); createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]) }
-model Revision { id String @id @default(cuid()); requestId String; number Int; notes String; attachmentPath String?; createdAt DateTime @default(now()); request ServiceRequest @relation(fields:[requestId],references:[id]) }
-model Ticket { id String @id @default(cuid()); ticketId String @unique; userId String; subject String; category String; message String; status String @default("OPEN"); createdAt DateTime @default(now()); user User @relation(fields:[userId],references:[id]) }
-model AuditLog { id String @id @default(cuid()); actorId String?; action String; entity String; entityId String?; metadata Json?; ipHash String?; createdAt DateTime @default(now()) }
+model DownloadLog {
+ id String @id @default(cuid()); userId String; productId String; orderId String?; tokenHash String; expiresAt DateTime; count Int @default(0); maxDownloads Int?
+ user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); order Order? @relation(fields:[orderId],references:[id])
+ @@index([tokenHash]); @@index([expiresAt])
+}
+model PaymentEvent {
+ id String @id @default(cuid()); eventId String @unique; orderId String?; status PaymentStatus; amount Int?; payload Json?; processedAt DateTime @default(now())
+ order Order? @relation(fields:[orderId],references:[id],onDelete:SetNull)
+ @@index([orderId]); @@index([processedAt])
+}
+model WishlistItem {
+ id String @id @default(cuid()); userId String; productId String; createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id]); @@unique([userId,productId])
+}
+model Review {
+ id String @id @default(cuid()); userId String; productId String; rating Int; title String?; body String; approved Boolean @default(false); createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id]); product Product @relation(fields:[productId],references:[id])
+}
+model Revision {
+ id String @id @default(cuid()); requestId String; number Int; notes String; attachmentPath String?; createdAt DateTime @default(now())
+ request ServiceRequest @relation(fields:[requestId],references:[id])
+}
+model Ticket {
+ id String @id @default(cuid()); ticketId String @unique; userId String; subject String; category String; message String; status String @default("OPEN"); createdAt DateTime @default(now())
+ user User @relation(fields:[userId],references:[id])
+}
+model AuditLog {
+ id String @id @default(cuid()); actorId String?; action String; entity String; entityId String?; metadata Json?; ipHash String?; createdAt DateTime @default(now())
+}
