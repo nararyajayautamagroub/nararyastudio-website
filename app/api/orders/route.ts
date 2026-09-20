@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{getSessionUser}from"@/lib/auth";import{db}from"@/lib/db";
+export async function GET(){try{const user=await getSessionUser();if(!user)return NextResponse.json({error:"Unauthorized"},{status:401});const orders=await db.order.findMany({where:{customerId:user.id},orderBy:{createdAt:"desc"},include:{items:{include:{product:{select:{productId:true,name:true,version:true}}}}}});return NextResponse.json({orders})}catch{return NextResponse.json({error:"Gagal memuat orders."},{status:500})}}
