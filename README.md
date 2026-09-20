@@ -16,7 +16,7 @@ Digital Creative Studio, Digital Product Store, Design Service & Custom Request.
 - Secure password hashing with scrypt and 7-day HTTP-only session cookies
 - Login, registration, logout and authenticated customer dashboard
 - Protected customer routes and staff dashboard gate
-- Order API and protected expiring digital download links
+- Order API with persisted payment method, payment instructions endpoint and protected expiring digital download links
 - Payment webhook verification using HMAC SHA-256 and idempotent event records
 - PostgreSQL + Prisma domain schema and migrations
 - Custom request API with NS-REQ identifiers and validation
@@ -73,7 +73,7 @@ Copy .env.example to .env and configure DATABASE_URL, NEXT_PUBLIC_SITE_URL, PAYM
 
 ## Production checklist
 
-1. Configure a real payment provider and map its signed webhook format to the HMAC contract.
+1. Configure a real payment provider and map its signed webhook format to the HMAC contract. Manual payment instructions can be supplied with PAYMENT_QRIS_INSTRUCTIONS, PAYMENT_VA_INSTRUCTIONS, PAYMENT_BANK_INSTRUCTIONS and PAYMENT_WALLET_INSTRUCTIONS.
 2. Configure private object storage and use file paths that resolve from STORAGE_BASE_URL or absolute HTTPS URLs.
 3. Configure Google OAuth with an exact HTTPS callback URL in Google Cloud.
 4. Assign staff roles in the database before opening /admin.
