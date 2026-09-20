@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+export async function GET(){try{const posts=await db.blogPost.findMany({where:{published:true},orderBy:[{publishedAt:"desc"},{createdAt:"desc"}],select:{id:true,slug:true,title:true,excerpt:true,content:true,coverImage:true,author:true,tags:true,publishedAt:true,createdAt:true}});return NextResponse.json({posts})}catch{return NextResponse.json({error:"Gagal memuat blog."},{status:500})}}
