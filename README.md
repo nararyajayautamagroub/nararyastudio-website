@@ -21,8 +21,8 @@ Digital Creative Studio, Digital Product Store, Design Service & Custom Request.
 - PostgreSQL + Prisma domain schema and migrations
 - Custom request API with NS-REQ identifiers and validation
 - Invoice PDF endpoint and notification center
-- Wishlist, quotations, coupon/promo, reviews, support tickets, finance reports, CMS and staff operations
-- SEO sitemap + robots and hardened security headers
+- Wishlist, quotations, coupon/promo, reviews, support tickets, FAQ, request tracking, finance reports, CMS and staff operations
+- SEO sitemap + robots, mobile web manifest and hardened security headers
 - Reusable robots-aware scraper CLI with crawl limits, delays and timeouts for permitted HTML sources
 - GitHub Actions CI for schema validation, typecheck, tests and production build
 
@@ -42,9 +42,15 @@ Run:
 
     npm run scrape -- https://example.com --out scrape-output.json
 
-For a same-origin crawl:
+The scraper uses same-origin crawling by default:
+
+    npm run scrape -- https://example.com --max-pages 25
+
+Explicit same-origin mode:
 
     npm run scrape -- https://example.com --same-origin --max-pages 25
+
+Use `--all-origins` only when cross-domain crawling is actually required.
 
 With delay and timeout:
 
