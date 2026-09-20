@@ -1,7 +1,3 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-export async function GET(req:Request){
- const {searchParams}=new URL(req.url); const q=searchParams.get("q")?.trim(); const category=searchParams.get("category");
- const products=await db.product.findMany({where:{status:"PUBLISHED",...(category&&category!=="All"?{category}:{}),...(q?{OR:[{name:{contains:q,mode:"insensitive"}},{description:{contains:q,mode:"insensitive"}}]}:{})},orderBy:{createdAt:"desc"}});
- return NextResponse.json({products});
-}
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+const SPECIAL=["New Release","Best Seller","Discount"] as const;
+export async function GET(req:Request){try{const{searchParams}=new URL(req.url);const q=(searchParams.get("q")||"").trim().slice(0,100);const category=(searchParams.get("category")||"").trim();const special=SPECIAL.includes(category as typeof SPECIAL[number])?category:"";const page=Math.max(1,Number(searchParams.get("page")||"1")||1);const pageSize=Math.min(48,Math.max(1,Number(searchParams.get("limit")||"24")||24));const where={status:"PUBLISHED" as const,...(q?{OR:[{name:{contains:q,mode:"insensitive" as const}},{description:{contains:q,mode:"insensitive" as const}}]}:{}),...(category&&category!=="All"&&!special?{category}:{})};let orderBy:{salesCount?:"desc";createdAt?:"desc";discount?:"desc"}={createdAt:"desc"};if(special==="Best Seller")orderBy={salesCount:"desc",createdAt:"desc"};if(special==="Discount")orderBy={discount:"desc",createdAt:"desc"};const[total,products]=await db.$transaction([db.product.count({where}),db.product.findMany({where,orderBy,skip:(page-1)*pageSize,take:pageSize,select:{id:true,productId:true,name:true,slug:true,description:true,category:true,price:true,discount:true,salesCount:true,thumbnail:true,gallery:true,version:true,changelog:true,license:true,compatibility:true,requirements:true,author:true,status:true,createdAt:true,updatedAt:true}})]);return NextResponse.json({products,page,pageSize,total,totalPages:Math.ceil(total/pageSize),hasNext:page*pageSize<total})}catch{return NextResponse.json({error:"Gagal memuat katalog."},{status:500})}}
