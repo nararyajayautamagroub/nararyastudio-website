@@ -6,9 +6,15 @@ Penggunaan:
 
     npm run scrape -- https://example.com --out scrape-output.json
 
-Crawler beberapa halaman dari domain yang sama:
+Crawler memakai mode same-origin secara default:
+
+    npm run scrape -- https://example.com --max-pages 25
+
+Untuk eksplisit same-origin:
 
     npm run scrape -- https://example.com --same-origin --max-pages 25
+
+Untuk mengizinkan crawl lintas origin gunakan `--all-origins` hanya bila memang diperlukan:
 
 Dengan delay dan timeout:
 
