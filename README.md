@@ -10,7 +10,7 @@ Digital Creative Studio, Digital Product Store, Design Service & Custom Request.
 - Arabic RTL support
 - Customer settings for language, theme, profile, password and session revocation
 - Google OAuth login with state protection and verified Google email requirement
-- Store search, pagination and functional category filters
+- Store search, pagination, category filters, bundles and server-side price calculation
 - Product detail with discount pricing and safe public fields
 - Resilient browser cart and connected checkout-to-order flow
 - Secure password hashing with scrypt and 7-day HTTP-only session cookies
@@ -21,9 +21,9 @@ Digital Creative Studio, Digital Product Store, Design Service & Custom Request.
 - PostgreSQL + Prisma domain schema and migrations
 - Custom request API with NS-REQ identifiers and validation
 - Invoice PDF endpoint and notification center
-- Wishlist, quotations, support tickets and staff product/request APIs
+- Wishlist, quotations, coupon/promo, reviews, support tickets, finance reports, CMS and staff operations
 - SEO sitemap + robots and hardened security headers
-- Reusable scraper CLI for permitted HTML sources
+- Reusable robots-aware scraper CLI with crawl limits, delays and timeouts for permitted HTML sources
 - GitHub Actions CI for schema validation, typecheck, tests and production build
 
 ## Google OAuth
@@ -45,6 +45,10 @@ Run:
 For a same-origin crawl:
 
     npm run scrape -- https://example.com --same-origin --max-pages 25
+
+With delay and timeout:
+
+    npm run scrape -- https://example.com --same-origin --max-pages 50 --delay 500 --timeout 15000
 
 The scraper extracts title, description, canonical, Open Graph, headings, JSON-LD, links and cleaned text. It does not bypass authentication, CAPTCHA, paywalls, rate limits or access controls.
 
