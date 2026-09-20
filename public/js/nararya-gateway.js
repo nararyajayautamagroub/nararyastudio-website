@@ -1,22 +1,60 @@
 (function (global) {
+  var pendingScripts = Object.create(null);
+
   function loadScript(src, attributes) {
-    return new Promise(function (resolve, reject) {
+    if (global.snap && typeof global.snap.pay === "function") return Promise.resolve();
+    if (pendingScripts[src]) return pendingScripts[src];
+
+    pendingScripts[src] = new Promise(function (resolve, reject) {
+      var settled = false;
+      var timer = null;
       var existing = document.querySelector('script[src="' + src + '"]');
+
+      function finish(error) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        delete pendingScripts[src];
+        if (error) reject(error);
+        else resolve();
+      }
+
+      function checkReady() {
+        if (global.snap && typeof global.snap.pay === "function") finish();
+      }
+
       if (existing) {
-        existing.addEventListener("load", function () { resolve(); }, { once: true });
-        if (global.snap) resolve();
+        checkReady();
+        if (settled) return;
+        existing.addEventListener("load", checkReady, { once: true });
+        existing.addEventListener("error", function () {
+          finish(new Error("Gateway script gagal dimuat."));
+        }, { once: true });
+        timer = setTimeout(function () {
+          checkReady();
+          if (!settled) finish(new Error("Gateway script timeout."));
+        }, 10000);
         return;
       }
+
       var script = document.createElement("script");
       script.src = src;
       script.async = true;
       Object.keys(attributes || {}).forEach(function (key) {
         script.setAttribute(key, attributes[key]);
       });
-      script.onload = function () { resolve(); };
-      script.onerror = function () { reject(new Error("Gateway script gagal dimuat.")); };
+      script.onload = checkReady;
+      script.onerror = function () {
+        finish(new Error("Gateway script gagal dimuat."));
+      };
       document.head.appendChild(script);
+      timer = setTimeout(function () {
+        checkReady();
+        if (!settled) finish(new Error("Gateway script timeout."));
+      }, 10000);
     });
+
+    return pendingScripts[src];
   }
 
   async function startMidtrans(token, clientKey, production, callbacks) {
