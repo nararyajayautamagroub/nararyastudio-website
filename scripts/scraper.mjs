@@ -3,144 +3,229 @@ import fs from "node:fs/promises";
 import process from "node:process";
 
 const args = process.argv.slice(2);
+const USER_AGENT = "NARARYA-STUDIO-Scraper/2.0";
 const get = (name, fallback = "") => {
   const i = args.indexOf(name);
-  return i >= 0 ? (args[i + 1] ?? fallback) : fallback;
+  return i >= 0 ? args[i + 1] ?? fallback : fallback;
 };
-const urls = args.filter((x) => /^https?:\/\//i.test(x));
+const has = (name) => args.includes(name);
+const urls = args.filter((value) => /^https?:\/\//i.test(value));
 const configPath = get("--config");
 const out = get("--out", "scrape-output.json");
-const allOrigins = args.includes("--all-origins");
-const sameOrigin = args.includes("--same-origin") || !allOrigins;
-const ignoreRobots = args.includes("--ignore-robots");
+const allOrigins = has("--all-origins");
+const sameOrigin = has("--same-origin") || !allOrigins;
+const ignoreRobots = has("--ignore-robots");
 const maxPages = Math.min(200, Math.max(1, Number(get("--max-pages", "50")) || 50));
 const timeoutMs = Math.min(30000, Math.max(2000, Number(get("--timeout", "10000")) || 10000));
-const delayMs = Math.min(5000, Math.max(100, Number(get("--delay", "300")) || 300));
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const delayMs = Math.min(5000, Math.max(0, Number(get("--delay", "300")) || 300));
+const retries = Math.min(3, Math.max(0, Number(get("--retries", "1")) || 1));
+const maxBodyBytes = Math.min(10 * 1024 * 1024, Math.max(64 * 1024, Number(get("--max-body-bytes", "2097152")) || 2097152));
 const robotsCache = new Map();
 
-function absolute(base, href) {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function normalizeUrl(raw, base) {
   try {
-    const u = new URL(href, base);
-    return /^https?:$/i.test(u.protocol) ? u.href : null;
+    const url = new URL(raw, base);
+    if (!/^https?:$/i.test(url.protocol)) return null;
+    url.hash = "";
+    return url.href;
   } catch {
     return null;
   }
 }
 
-function strip(html) {
-  return html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&").replace(/\s+/g, " ").trim();
+function decodeEntities(value) {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
 }
 
-function attr(tag, name) {
-  const m = tag.match(new RegExp(name + "\\s*=\\s*[\"']([^\"']*)[\"']", "i"));
-  return m?.[1]?.trim() || null;
+function getAttr(tag, name) {
+  const escaped = name.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&");
+  const expression = new RegExp(escaped + "\\s*=\\s*[\\\"']([^\\\"']*)[\\\"']", "i");
+  return expression.exec(tag)?.[1]?.trim() || null;
+}
+
+function strip(html) {
+  return decodeEntities(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 function meta(html, name, property) {
-  const re = property ? new RegExp("<meta[^>]+property=[\"']" + property + "[\"'][^>]*>", "i") : new RegExp("<meta[^>]+name=[\"']" + name + "[\"'][^>]*>", "i");
-  const tag = html.match(re)?.[0];
-  return tag ? attr(tag, "content") : null;
+  const attrName = property ? "property" : "name";
+  const key = property || name;
+  const expression = new RegExp("<meta[^>]+" + attrName + "=[\\\"']" + key.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&") + "[\\\"'][^>]*>", "i");
+  const tag = expression.exec(html)?.[0];
+  return tag ? decodeEntities(getAttr(tag, "content") || "") || null : null;
 }
 
 function canonical(html, base) {
-  const tag = html.match(/<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i)?.[0];
-  return tag ? absolute(base, attr(tag, "href") || "") : null;
+  const tag = /<link[^>]+rel=["'][^"']*canonical[^"']*["'][^>]*>/i.exec(html)?.[0];
+  return tag ? normalizeUrl(getAttr(tag, "href") || "", base) : null;
 }
 
 function jsonLd(html) {
-  return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map((m) => {
-    try { return JSON.parse(m[1]); } catch { return null; }
-  }).filter(Boolean);
+  return [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)]
+    .map((match) => {
+      try {
+        return JSON.parse(match[1]);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
 }
 
 function links(html, base) {
   const found = [];
-  for (const m of html.matchAll(/<a[^>]+href=["']([^"']+)["']/gi)) {
-    const u = absolute(base, m[1]);
-    if (u && !found.includes(u)) found.push(u);
+  for (const match of html.matchAll(/<a[^>]+href=["']([^"']+)["']/gi)) {
+    const raw = match[1].trim();
+    if (/^(?:mailto|tel|javascript|data):/i.test(raw)) continue;
+    const url = normalizeUrl(raw, base);
+    if (url && !found.includes(url)) found.push(url);
   }
   return found;
 }
 
-function pathAllowed(path, rules) {
-  for (const rule of rules) {
-    const normalized = rule.trim();
-    if (!normalized) continue;
-    if (normalized.endsWith("$")) {
-      if (path === normalized.slice(0, -1)) return false;
-    } else if (path.startsWith(normalized)) {
-      return false;
-    }
-  }
-  return true;
+function ruleRegex(rule) {
+  const value = rule.trim();
+  if (!value) return null;
+  const anchored = value.endsWith("$");
+  const body = anchored ? value.slice(0, -1) : value;
+  const escaped = body.replace(/[.+?^{}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp("^" + escaped + (anchored ? "$" : ""), "i");
 }
 
-async function robotsFor(origin) {
-  if (ignoreRobots) return { disallow: [] };
+function parseRobots(text) {
+  const groups = [];
+  let agents = [];
+  let directives = [];
+
+  function flush() {
+    if (agents.length) groups.push({ agents: [...agents], directives: [...directives] });
+    agents = [];
+    directives = [];
+  }
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.split("#", 1)[0].trim();
+    if (!line) continue;
+    const separator = line.indexOf(":");
+    if (separator < 0) continue;
+    const key = line.slice(0, separator).trim().toLowerCase();
+    const value = line.slice(separator + 1).trim();
+    if (key === "user-agent") {
+      if (agents.length && directives.length) flush();
+      agents.push(value.toLowerCase());
+    } else if ((key === "allow" || key === "disallow") && agents.length) {
+      directives.push({ type: key, value });
+    }
+  }
+  flush();
+
+  const token = USER_AGENT.toLowerCase();
+  const product = token.split(/[\/\s]/)[0];
+  const specific = groups.filter((group) => group.agents.includes(product) || group.agents.includes(token));
+  const selected = specific.length ? specific : groups.filter((group) => group.agents.includes("*"));
+  const rules = [];
+
+  for (const group of selected) {
+    for (const directive of group.directives) {
+      const matcher = ruleRegex(directive.value);
+      if (matcher) rules.push({ ...directive, matcher, length: directive.value.length });
+    }
+  }
+  return rules;
+}
+
+function pathAllowed(pathname, rules) {
+  let winner = null;
+  for (const rule of rules) {
+    if (!rule.matcher.test(pathname)) continue;
+    if (!winner || rule.length > winner.length || (rule.length === winner.length && rule.type === "allow")) {
+      winner = rule;
+    }
+  }
+  return winner ? winner.type === "allow" : true;
+}
+
+async function getRobots(origin) {
+  if (ignoreRobots) return [];
   if (robotsCache.has(origin)) return robotsCache.get(origin);
-  const result = { disallow: [] };
+  let rules = [];
   try {
-    const res = await fetch(new URL("/robots.txt", origin), {
-      headers: { "user-agent": "NARARYA-STUDIO-Scraper/1.0" },
+    const response = await fetch(new URL("/robots.txt", origin), {
+      headers: { "user-agent": USER_AGENT, accept: "text/plain,*/*;q=0.2" },
       signal: AbortSignal.timeout(timeoutMs)
     });
-    if (!res.ok) {
-      robotsCache.set(origin, result);
-      return result;
-    }
-    const lines = (await res.text()).split(/\r?\n/);
-    let applies = false;
-    let rules = [];
-    for (const raw of lines) {
-      const line = raw.split("#")[0].trim();
-      const colon = line.indexOf(":");
-      if (colon < 0) continue;
-      const key = line.slice(0, colon).trim().toLowerCase();
-      const value = line.slice(colon + 1).trim();
-      if (key === "user-agent") {
-        applies = value === "*" || value.toLowerCase() === "nararya-studio-scraper";
-        if (applies) rules = [];
-      } else if (applies && key === "disallow" && value) {
-        rules.push(value);
-      }
-    }
-    result.disallow = rules;
-    robotsCache.set(origin, result);
-    return result;
-  } catch {
-    robotsCache.set(origin, result);
-    return result;
-  }
+    if (response.ok) rules = parseRobots(await response.text());
+  } catch {}
+  robotsCache.set(origin, rules);
+  return rules;
 }
 
 async function fetchPage(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: controller.signal,
-      headers: {
-        "user-agent": "NARARYA-STUDIO-Scraper/1.0",
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        redirect: "follow",
+        signal: controller.signal,
+        headers: {
+          "user-agent": USER_AGENT,
+          accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+      });
+      const contentType = response.headers.get("content-type") || "";
+      const contentLength = Number(response.headers.get("content-length") || 0);
+      if (contentLength > maxBodyBytes) {
+        return { url: response.url || url, status: response.status, contentType, ok: false, body: "", tooLarge: true };
       }
-    });
-    return { url: res.url || url, status: res.status, contentType: res.headers.get("content-type") || "", ok: res.ok, body: await res.text() };
-  } finally {
-    clearTimeout(timer);
+      const body = await response.text();
+      if (Buffer.byteLength(body, "utf8") > maxBodyBytes) {
+        return { url: response.url || url, status: response.status, contentType, ok: false, body: "", tooLarge: true };
+      }
+      return { url: response.url || url, status: response.status, contentType, ok: response.ok, body };
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) await sleep(Math.min(1500, 250 * 2 ** attempt));
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw lastError || new Error("fetch gagal");
 }
 
 async function loadConfig() {
   if (!configPath) return [];
   const parsed = JSON.parse(await fs.readFile(configPath, "utf8"));
-  return Array.isArray(parsed) ? parsed : (parsed.sources || []);
+  return Array.isArray(parsed) ? parsed : Array.isArray(parsed.sources) ? parsed.sources : [];
+}
+
+function configuredUrl(entry) {
+  return typeof entry === "string" ? entry : entry?.url;
 }
 
 async function main() {
   const configured = await loadConfig();
-  const targets = [...urls, ...configured.map((x) => typeof x === "string" ? x : x.url)].filter(Boolean);
+  const targets = [...urls, ...configured.map(configuredUrl)]
+    .map((value) => normalizeUrl(value))
+    .filter(Boolean);
+
   if (!targets.length) {
     console.error("Gunakan: npm run scrape -- https://example.com --out scrape-output.json");
     process.exitCode = 2;
@@ -148,42 +233,63 @@ async function main() {
   }
 
   const queue = [...new Set(targets)];
+  const queued = new Set(queue);
   const seen = new Set();
   const results = [];
 
   while (queue.length && results.length < maxPages) {
     const url = queue.shift();
-    if (seen.has(url)) continue;
+    queued.delete(url);
+    if (!url || seen.has(url)) continue;
     seen.add(url);
 
     try {
       const parsed = new URL(url);
-      const robots = await robotsFor(parsed.origin);
-      if (!ignoreRobots && !pathAllowed(parsed.pathname, robots.disallow)) {
+      const robots = await getRobots(parsed.origin);
+      if (!ignoreRobots && !pathAllowed(parsed.pathname, robots)) {
         results.push({ url, status: 0, ok: false, skipped: true, reason: "robots.txt disallows this path", fetchedAt: new Date().toISOString() });
         console.log("[skip] robots.txt " + url);
         continue;
       }
 
       const page = await fetchPage(url);
-      const item = { url: page.url, status: page.status, ok: page.ok, contentType: page.contentType, fetchedAt: new Date().toISOString() };
+      const item = {
+        url: page.url,
+        status: page.status,
+        ok: page.ok,
+        contentType: page.contentType,
+        fetchedAt: new Date().toISOString()
+      };
 
-      if (page.contentType.includes("html") || /<html[\s>]/i.test(page.body)) {
-        item.title = page.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, " ").trim() || null;
+      if (page.tooLarge) {
+        item.error = "Response body exceeds --max-body-bytes";
+      } else if (page.contentType.includes("html") || /<html[\s>]/i.test(page.body)) {
+        item.title = decodeEntities(page.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").replace(/\s+/g, " ").trim() || null;
         item.description = meta(page.body, "description");
         item.canonical = canonical(page.body, page.url);
-        item.og = { title: meta(page.body, "", "og:title"), description: meta(page.body, "", "og:description"), image: meta(page.body, "", "og:image") };
-        item.headings = [...page.body.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)].slice(0, 50).map((m) => ({ level: Number(m[1]), text: strip(m[2]).slice(0, 300) }));
+        item.og = {
+          title: meta(page.body, "", "og:title"),
+          description: meta(page.body, "", "og:description"),
+          image: meta(page.body, "", "og:image")
+        };
+        item.headings = [...page.body.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)]
+          .slice(0, 50)
+          .map((match) => ({ level: Number(match[1]), text: strip(match[2]).slice(0, 300) }));
         item.text = strip(page.body).slice(0, 20000);
         item.jsonLd = jsonLd(page.body);
 
         let next = links(page.body, page.url);
-        if (sameOrigin) next = next.filter((x) => new URL(x).origin === new URL(page.url).origin);
+        if (sameOrigin) {
+          const origin = new URL(page.url).origin;
+          next = next.filter((link) => new URL(link).origin === origin);
+        }
         for (const link of next) {
+          if (seen.has(link) || queued.has(link) || results.length + queue.length >= maxPages) continue;
           const linkUrl = new URL(link);
-          const linkRobots = await robotsFor(linkUrl.origin);
-          if (!ignoreRobots && !pathAllowed(linkUrl.pathname, linkRobots.disallow)) continue;
-          if (!seen.has(link) && queue.length < maxPages) queue.push(link);
+          const linkRules = await getRobots(linkUrl.origin);
+          if (!ignoreRobots && !pathAllowed(linkUrl.pathname, linkRules)) continue;
+          queue.push(link);
+          queued.add(link);
         }
       } else {
         item.body = page.body.slice(0, 20000);
@@ -197,10 +303,20 @@ async function main() {
       console.error("[error] " + url + ": " + message);
     }
 
-    await sleep(delayMs);
+    if (delayMs) await sleep(delayMs);
   }
 
-  await fs.writeFile(out, JSON.stringify({ generatedAt: new Date().toISOString(), count: results.length, results }, null, 2), "utf8");
+  const payload = JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    scraperVersion: "2.0",
+    options: { sameOrigin, ignoreRobots, maxPages, timeoutMs, delayMs, retries, maxBodyBytes },
+    count: results.length,
+    results
+  }, null, 2);
+
+  const temporary = out + ".tmp";
+  await fs.writeFile(temporary, payload, "utf8");
+  await fs.rename(temporary, out);
   console.log("Selesai: " + results.length + " halaman -> " + out);
 }
 
