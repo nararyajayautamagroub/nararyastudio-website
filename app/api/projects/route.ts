@@ -1,0 +1,2 @@
+import{NextResponse}from"next/server";import{db}from"@/lib/db";
+export async function GET(){try{const items=await db.projectCaseStudy.findMany({orderBy:{createdAt:"desc"},select:{id:true,slug:true,title:true,category:true,summary:true,description:true,software:true,services:true,status:true,coverImage:true,completedAt:true,createdAt:true}});return NextResponse.json({items})}catch{return NextResponse.json({error:"Gagal memuat projects."},{status:500})}}
