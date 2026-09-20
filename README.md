@@ -60,7 +60,7 @@ The scraper extracts title, description, canonical, Open Graph, headings, JSON-L
 
 ## Environment
 
-Copy .env.example to .env and configure DATABASE_URL, NEXT_PUBLIC_SITE_URL, PAYMENT_WEBHOOK_SECRET, STORAGE_BASE_URL and the Google OAuth variables when Google Login is enabled.
+Copy .env.example to .env and configure DATABASE_URL, NEXT_PUBLIC_SITE_URL, PAYMENT_WEBHOOK_SECRET, STORAGE_BASE_URL, the Google OAuth variables when Google Login is enabled, and Midtrans keys when PAYMENT_GATEWAY=MIDTRANS.
 
 ## Local run
 
@@ -81,3 +81,13 @@ Copy .env.example to .env and configure DATABASE_URL, NEXT_PUBLIC_SITE_URL, PAYM
 6. Run production E2E/security tests against a staging database.
 
 No repository change can honestly guarantee that every runtime issue is impossible. The CI pipeline remains the automated gate, while production credentials, database state, provider behavior and hosting configuration remain environment-specific.
+
+## Payment Gateway
+
+Set `PAYMENT_GATEWAY=MIDTRANS` to create real Snap transactions from the server. Configure `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, and `MIDTRANS_IS_PRODUCTION`. Midtrans uses the Server Key for server-side Basic authentication and the Client Key for browser Snap.js. Notifications are verified with Midtrans's `signature_key` formula and processed idempotently. Production must use an HTTPS notification URL configured in the Midtrans dashboard.
+
+For local or manual flows, keep `PAYMENT_GATEWAY=MANUAL`; payment instructions can be supplied with the `PAYMENT_*_INSTRUCTIONS` variables.
+
+## JavaScript frontend
+
+Interactive checkout and login now use `.jsx`, while shared vanilla browser modules live under `public/js/`. TypeScript remains for database, authentication, RBAC and payment verification so runtime-sensitive code keeps compile-time checks. `npm run verify` runs the schema, generation, typecheck, tests and production build chain.
