@@ -5,7 +5,7 @@ export async function GET() {
   const started = Date.now();
 
   try {
-    await db.$queryRawUnsafe("SELECT 1");
+    await db.$queryRaw`SELECT 1`;
 
     return NextResponse.json({
       status: "ok",
