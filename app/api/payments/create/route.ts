@@ -5,6 +5,7 @@ import { createGatewaySession } from "@/lib/payment-gateway";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/payment";
 import { writeAudit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { hashToken } from "@/lib/security";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -16,10 +17,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const orderId = String(body.orderId || "");
-    const guestEmail = String(body.email || "").trim().toLowerCase();
-    if (!user && !guestEmail) return NextResponse.json({ error: "Login atau email checkout diperlukan." }, { status: 401 });
+    const checkoutToken = String(body.checkoutToken || "");
+    if (!user && checkoutToken.length < 32) return NextResponse.json({ error: "Token checkout tidak valid atau tidak tersedia." }, { status: 401 });
     const order = await db.order.findFirst({
-      where: { orderId, ...(user ? { customerId: user.id } : { customer: { email: guestEmail } }) },
+      where: { orderId, ...(user ? { customerId: user.id } : { checkoutTokenHash: hashToken(checkoutToken) }) },
       include: { customer: { select: { id: true, name: true, email: true } }, items: { include: { product: { select: { productId: true, name: true } } } } }
     });
 
