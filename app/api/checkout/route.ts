@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orderId, safeText, isValidEmail } from "@/lib/security";
+import { orderId, safeText, isValidEmail, hashToken, newDownloadToken } from "@/lib/security";
 import { rateLimit } from "@/lib/rate-limit";
 import { calculateCouponDiscount } from "@/lib/coupons";
 import { writeAudit } from "@/lib/audit";
@@ -86,6 +86,7 @@ export async function POST(req: Request) {
       items.push({ productId: product.productId, quantity, price, discount });
     }
 
+    const checkoutAccessToken = newDownloadToken();
     const result = await db.$transaction(async (tx) => {
       let coupon: Awaited<ReturnType<typeof tx.coupon.findUnique>> = null;
       let couponDiscount = 0;
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
           customerId: customer.id,
           couponId: coupon?.id ?? null,
           paymentMethod,
+          checkoutTokenHash: hashToken(checkoutAccessToken),
           subtotal,
           discount: couponDiscount,
           total,
@@ -136,6 +138,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       orderId: result.orderId,
+      checkoutToken: checkoutAccessToken,
       total: result.total,
       discount: result.discount,
       status: result.status,
