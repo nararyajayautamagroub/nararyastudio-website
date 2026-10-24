@@ -47,11 +47,11 @@ export default function Checkout() {
     }
   }
 
-  async function startGateway(orderId) {
+  async function startGateway(orderId, customerEmail) {
     const response = await fetch("/api/payments/create", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ orderId })
+      body: JSON.stringify({ orderId, email: customerEmail })
     });
     const gateway = await response.json();
     if (!response.ok) throw new Error(gateway.error || "Payment gateway gagal dibuat.");
@@ -103,7 +103,7 @@ export default function Checkout() {
         const message = `Halo Nararya Studio, saya ingin konfirmasi order ${x.orderId}. Total: Rp${Number(x.total).toLocaleString("id-ID")}. Metode: ${x.paymentMethod}. Batas pembayaran: 10 menit sejak order dibuat. Nama: ${name}. Kontak pelanggan: ${contact || "-"}.`;
         setWhatsappUrl(`https://wa.me/${businessNumber}?text=${encodeURIComponent(message)}`);
       }
-      await startGateway(x.orderId);
+      await startGateway(x.orderId, email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout gagal");
     } finally {
