@@ -24,7 +24,10 @@ try {
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
   const routes = [
     { path: "/", file: "home-desktop.png" },
-    { path: "/login", file: "login-desktop.png" }
+    { path: "/login", file: "login-desktop.png" },
+    { path: "/ai", file: "ai-desktop.png" },
+    { path: "/cart", file: "cart-desktop.png" },
+    { path: "/checkout", file: "checkout-desktop.png" }
   ];
   for (const route of routes) {
     const response = await desktop.goto(baseURL + route.path, { waitUntil: "networkidle", timeout: 30000 });
