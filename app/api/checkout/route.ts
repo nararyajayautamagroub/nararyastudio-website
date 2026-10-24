@@ -116,6 +116,7 @@ export async function POST(req: Request) {
           subtotal,
           discount: couponDiscount,
           total,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
           items: { create: items },
         },
       });
@@ -140,6 +141,8 @@ export async function POST(req: Request) {
       status: result.status,
       paymentStatus: result.paymentStatus,
       paymentMethod: result.paymentMethod,
+      expiresAt: result.expiresAt.toISOString(),
+      whatsappNumberConfigured: Boolean(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER),
     }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
