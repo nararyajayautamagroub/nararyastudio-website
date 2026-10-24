@@ -25,6 +25,10 @@ export async function POST(req: Request) {
     if (order.paymentStatus !== "PENDING") {
       return NextResponse.json({ error: "Order ini tidak lagi menunggu pembayaran." }, { status: 409 });
     }
+    if (order.expiresAt.getTime() <= Date.now()) {
+      await db.order.updateMany({ where: { id: order.id, paymentStatus: "PENDING" }, data: { paymentStatus: "EXPIRED", status: "CANCELLED" } });
+      return NextResponse.json({ error: "Batas pembayaran 10 menit telah habis. Buat order baru untuk melanjutkan." }, { status: 410 });
+    }
 
     const paymentMethod = order.paymentMethod as PaymentMethod;
     if (!PAYMENT_METHODS.includes(paymentMethod)) {
