@@ -8,17 +8,19 @@ import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!rateLimit("payment-create:" + user.id, 10, 10 * 60_000).allowed) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!rateLimit("payment-create:" + (user?.id || ip), 10, 10 * 60_000).allowed) {
     return NextResponse.json({ error: "Terlalu banyak pembuatan payment session." }, { status: 429 });
   }
 
   try {
     const body = await req.json();
     const orderId = String(body.orderId || "");
+    const guestEmail = String(body.email || "").trim().toLowerCase();
+    if (!user && !guestEmail) return NextResponse.json({ error: "Login atau email checkout diperlukan." }, { status: 401 });
     const order = await db.order.findFirst({
-      where: { orderId, customerId: user.id },
-      include: { items: { include: { product: { select: { productId: true, name: true } } } } }
+      where: { orderId, ...(user ? { customerId: user.id } : { customer: { email: guestEmail } }) },
+      include: { customer: { select: { id: true, name: true, email: true } }, items: { include: { product: { select: { productId: true, name: true } } } } }
     });
 
     if (!order) return NextResponse.json({ error: "Order tidak ditemukan." }, { status: 404 });
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
       orderId: order.orderId,
       total: order.total,
       paymentMethod,
-      customer: { name: user.name, email: user.email },
+      customer: { name: order.customer.name, email: order.customer.email },
       items: order.items.map((item) => ({
         productId: item.product.productId,
         name: item.product.name,
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     });
 
     await writeAudit({
-      actorId: user.id,
+      actorId: user?.id,
       action: "CREATE_PAYMENT_SESSION",
       entity: "Order",
       entityId: order.id,
