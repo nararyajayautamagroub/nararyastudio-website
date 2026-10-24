@@ -59,7 +59,7 @@ export async function createGatewaySession(input: {
     },
     enabled_payments: midtransEnabledPayments(input.paymentMethod),
     callbacks: { finish: callbackUrl },
-    page_expiry: { duration: 60, unit: "minutes" }
+    page_expiry: { duration: 10, unit: "minutes" }
   };
 
   const response = await fetch(base + "/snap/v1/transactions", {
