@@ -15,8 +15,16 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [couponBusy, setCouponBusy] = useState(false);
+  const [whatsappUrl, setWhatsappUrl] = useState("");
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
 
   useEffect(() => setCart(readCart()), []);
+
+  useEffect(() => {
+    if (!secondsRemaining) return;
+    const timer = setInterval(() => setSecondsRemaining((value) => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [secondsRemaining > 0]);
 
   async function validateCoupon() {
     setCouponInfo("");
@@ -89,6 +97,12 @@ export default function Checkout() {
       if (!r.ok) throw new Error(x.error || "Checkout gagal");
       writeCart([]);
       setCart([]);
+      setSecondsRemaining(600);
+      const businessNumber = String(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\\D/g, "");
+      if (businessNumber) {
+        const message = `Halo Nararya Studio, saya ingin konfirmasi order ${x.orderId}. Total: Rp${Number(x.total).toLocaleString("id-ID")}. Metode: ${x.paymentMethod}. Batas pembayaran: 10 menit sejak order dibuat. Nama: ${name}. Kontak pelanggan: ${contact || "-"}.`;
+        setWhatsappUrl(`https://wa.me/${businessNumber}?text=${encodeURIComponent(message)}`);
+      }
       await startGateway(x.orderId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout gagal");
@@ -139,6 +153,8 @@ export default function Checkout() {
             {status && (
               <div role="status" className="card p-4 text-emerald-700">
                 {status}
+                {secondsRemaining > 0 && <p className="mt-2 font-semibold">Batas pembayaran: {String(Math.floor(secondsRemaining / 60)).padStart(2, "0")}:{String(secondsRemaining % 60).padStart(2, "0")}</p>}
+                {whatsappUrl && <a className="btn mt-3" href={whatsappUrl} target="_blank" rel="noreferrer">Konfirmasi melalui WhatsApp</a>}
                 <div className="mt-3 flex gap-2">
                   <Link className="btn" href="/orders">Lihat Orders</Link>
                   <Link className="btn" href="/store">Kembali ke Store</Link>
