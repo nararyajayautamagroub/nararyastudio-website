@@ -191,6 +191,7 @@ model Order {
   gatewayToken        String?
   gatewayRedirectUrl  String?
   gatewayTransactionId String?
+  checkoutTokenHash String? @unique
   subtotal      Int
   discount      Int           @default(0)
   total         Int
