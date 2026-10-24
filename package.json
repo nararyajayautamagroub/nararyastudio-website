@@ -15,7 +15,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "scrape": "node scripts/scraper.mjs",
     "verify": "npm run db:validate && npm run db:generate && npm run check:js && npm run typecheck && npm run test && npm run build",
-    "check:js": "node --check scripts/scraper.mjs && node --check public/js/nararya-bootstrap.js && node --check public/js/nararya-gateway.js"
+    "check:js": "node --check scripts/scraper.mjs && node --check public/js/nararya-bootstrap.js && node --check public/js/nararya-gateway.js",
+    "screenshot:smoke": "node scripts/screenshot-smoke.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
@@ -33,7 +34,8 @@
     "tailwindcss": "4.3.3",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "playwright": "^1.55.0"
   },
   "overrides": {
     "deepmerge-ts": "8.0.1"
