@@ -97,7 +97,7 @@ export default function Checkout() {
       if (!r.ok) throw new Error(x.error || "Checkout gagal");
       writeCart([]);
       setCart([]);
-      setSecondsRemaining(600);
+      setSecondsRemaining(Math.max(0, Math.floor((new Date(x.expiresAt).getTime() - Date.now()) / 1000)));
       const businessNumber = String(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\\D/g, "");
       if (businessNumber) {
         const message = `Halo Nararya Studio, saya ingin konfirmasi order ${x.orderId}. Total: Rp${Number(x.total).toLocaleString("id-ID")}. Metode: ${x.paymentMethod}. Batas pembayaran: 10 menit sejak order dibuat. Nama: ${name}. Kontak pelanggan: ${contact || "-"}.`;
