@@ -27,3 +27,15 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+      - name: Install Chromium for browser smoke tests
+        run: npx playwright install --with-deps chromium
+      - name: Capture desktop and mobile screenshots
+        run: npm run screenshot:smoke
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: nararya-studio-browser-screenshots
+          path: artifacts/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
